@@ -1,5 +1,5 @@
-const airtableToken = "patYOUR_ACCESS_TOKEN"; // 👈 вставь свой токен
-const baseId = "appXXXXXXXXXXXXXX";           // 👈 вставь ID базы
+const airtableToken = "patZ3j588Sj2vd4xd.27acf31621f89399b2bcacf564b3d81f7a036ab9331221b18ff3e5a2b885ae5b"; // 👈 вставь свой токен
+const baseId = "appwnWtPWAfhsQpDs";           // 👈 вставь ID базы
 const tableName = "Регистрации";
 
 function showPopupMessage(text, isSuccess) {
