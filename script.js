@@ -34,34 +34,69 @@ async function fetchPurchasesByUserId(userId) {
   return data.records.map(r => r.fields["ID товара"]);
 }
 
+async function fetchProductNamesByIds(productIds) {
+  if (!productIds.length) return [];
+  const tableName = "Мерч";
+  // Формируем формулу поиска по нескольким ID
+  const orConditions = productIds.map(id => `({ID} = "${id}")`).join(",");
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?filterByFormula=OR(${orConditions})`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${airtableToken}` }
+  });
+  const data = await res.json();
+  if (!data.records || data.records.length === 0) return [];
+  // Возвращаем массив названий в том же порядке, что и productIds
+  const idToName = {};
+  data.records.forEach(r => {
+    idToName[r.fields["ID"]] = r.fields["Название"] || r.fields["ID"];
+  });
+  return productIds.map(id => idToName[id] || id);
+}
+
 function onScanSuccess(decodedText) {
   processQr(decodedText);
 }
 
 async function processQr(qrLink) {
   try {
-    // 1. Найти пользователя по ссылке
     const userId = await fetchUserIdByQrLink(qrLink);
     if (!userId) {
-      showPopupMessage("Пользователь не найден", false);
+      showPopupMessage("не удалось отсканировать QR код", false);
+      renderProducts([]);
       return;
     }
-    // 2. Найти покупки по ID пользователя
-    const purchases = await fetchPurchasesByUserId(userId);
-    if (purchases.length === 0) {
-      showPopupMessage("Покупки не найдены", false);
+    const productIds = await fetchPurchasesByUserId(userId);
+    if (productIds.length === 0) {
+      showPopupMessage("не удалось отсканировать QR код", false);
+      renderProducts([]);
       return;
     }
-    // 3. Вывести товары
-    const messageElem = document.getElementById("message");
-    if (messageElem) {
-      messageElem.textContent = `ID товара: ${purchases.join(", ")}`;
-    }
-    showPopupMessage(`ID товара: ${purchases.join(", ")}`, true);
+    const productNames = await fetchProductNamesByIds(productIds);
+    renderProducts(productNames);
+    showPopupMessage("QR отсканировано", true);
   } catch (err) {
     console.error(err);
-    showPopupMessage("Ошибка соединения", false);
+    showPopupMessage("не удалось отсканировать QR код", false);
+    renderProducts([]);
   }
+}
+
+function renderProducts(products) {
+  const list = document.getElementById("products-list");
+  if (!list) return;
+  list.innerHTML = "";
+  if (products.length === 0) {
+    const li = document.createElement("li");
+    li.textContent = "Нет доступных товаров";
+    li.style.color = "#888";
+    list.appendChild(li);
+    return;
+  }
+  products.forEach(name => {
+    const li = document.createElement("li");
+    li.textContent = name;
+    list.appendChild(li);
+  });
 }
 
 const qrScanner = new Html5Qrcode("reader");
