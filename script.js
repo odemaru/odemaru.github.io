@@ -1,5 +1,5 @@
-const airtableToken = "patZ3j588Sj2vd4xd.27acf31621f89399b2bcacf564b3d81f7a036ab9331221b18ff3e5a2b885ae5b"; // 👈 вставь свой токен
-const baseId = "appwnWtPWAfhsQpDs";           // 👈 вставь ID базы
+const airtableToken = "patZ3j588Sj2vd4xd.27acf31621f89399b2bcacf564b3d81f7a036ab9331221b18ff3e5a2b885ae5b"; 
+const baseId = "appwnWtPWAfhsQpDs";          
 
 function showPopupMessage(text, isSuccess) {
   const popup = document.createElement("div");
@@ -31,7 +31,6 @@ async function fetchPurchasesByUserId(userId) {
   });
   const data = await res.json();
   if (!data.records || data.records.length === 0) return [];
-  // Возвращаем массив объектов: { id: ID товара, count: Количество }
   return data.records.map(r => ({ id: r.fields["ID товара"], count: r.fields["Количество"] }));
 }
 
@@ -50,7 +49,7 @@ async function fetchProductNamesByIds(productObjs) {
   data.records.forEach(r => {
     idToName[r.fields["ID"]] = r.fields["Название"] || r.fields["ID"];
   });
-  // Возвращаем [{name, id, count} ...] в том же порядке, что и productObjs
+
   return productObjs.map(obj => ({
     name: idToName[obj.id] || obj.id,
     id: obj.id,
@@ -89,7 +88,7 @@ async function processQr(qrLink) {
 async function setQrScannedForProducts(productIds) {
   if (!productIds.length) return;
   const tableName = "Покупки";
-  // Получаем записи для обновления
+
   const orConditions = productIds.map(id => `({ID товара} = "${id}")`).join(",");
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?filterByFormula=OR(${orConditions})`;
   const res = await fetch(url, {
@@ -97,7 +96,7 @@ async function setQrScannedForProducts(productIds) {
   });
   const data = await res.json();
   if (!data.records || data.records.length === 0) return;
-  // Обновляем каждую запись
+  
   await Promise.all(data.records.map(record => fetch(
     `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}/${record.id}`,
     {
@@ -161,7 +160,7 @@ function renderProducts(products) {
     };
     list.appendChild(li);
   });
-  // После вывода товаров отмечаем их как отсканированные в базе
+
   setQrScannedForProducts(products.map(p => p.id));
 }
 
@@ -172,7 +171,6 @@ qrScanner.start(
   onScanSuccess
 );
 
-// --- Кнопки управления списком ---
 document.addEventListener("DOMContentLoaded", () => {
   const clearBtn = document.getElementById("clear-list-btn");
   const checkAllBtn = document.getElementById("check-all-btn");
@@ -212,7 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-// --- Стили для отмеченных товаров ---
+
 const style = document.createElement('style');
 style.innerHTML = `.product-item.checked { color: #4CAF50; font-weight: 500; }`;
 document.head.appendChild(style);
