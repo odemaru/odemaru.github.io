@@ -53,6 +53,10 @@ async function processQr(qrLink) {
       return;
     }
     // 3. Вывести товары
+    const messageElem = document.getElementById("message");
+    if (messageElem) {
+      messageElem.textContent = `Товары: ${purchases.join(", ")}`;
+    }
     showPopupMessage(`Товары: ${purchases.join(", ")}`, true);
   } catch (err) {
     console.error(err);
