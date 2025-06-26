@@ -86,6 +86,54 @@ async function processQr(qrLink) {
   }
 }
 
+async function setQrScannedForProducts(productIds) {
+  if (!productIds.length) return;
+  const tableName = "Покупки";
+  // Получаем записи для обновления
+  const orConditions = productIds.map(id => `({ID товара} = "${id}")`).join(",");
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?filterByFormula=OR(${orConditions})`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${airtableToken}` }
+  });
+  const data = await res.json();
+  if (!data.records || data.records.length === 0) return;
+  // Обновляем каждую запись
+  await Promise.all(data.records.map(record => fetch(
+    `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}/${record.id}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${airtableToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ fields: { "Отсканирован QR": true } })
+    }
+  )));
+}
+
+async function setStatusIssuedForProducts(productIds) {
+  if (!productIds.length) return;
+  const tableName = "Покупки";
+  const orConditions = productIds.map(id => `({ID товара} = "${id}")`).join(",");
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?filterByFormula=OR(${orConditions})`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${airtableToken}` }
+  });
+  const data = await res.json();
+  if (!data.records || data.records.length === 0) return;
+  await Promise.all(data.records.map(record => fetch(
+    `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}/${record.id}`,
+    {
+      method: "PATCH",
+      headers: {
+        "Authorization": `Bearer ${airtableToken}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ fields: { "Статус": "Выдан" } })
+    }
+  )));
+}
+
 function renderProducts(products) {
   const list = document.getElementById("products-list");
   if (!list) return;
@@ -113,6 +161,8 @@ function renderProducts(products) {
     };
     list.appendChild(li);
   });
+  // После вывода товаров отмечаем их как отсканированные в базе
+  setQrScannedForProducts(products.map(p => p.id));
 }
 
 const qrScanner = new Html5Qrcode("reader");
@@ -126,6 +176,7 @@ qrScanner.start(
 document.addEventListener("DOMContentLoaded", () => {
   const clearBtn = document.getElementById("clear-list-btn");
   const checkAllBtn = document.getElementById("check-all-btn");
+  const issueBtn = document.getElementById("issue-btn");
   const list = document.getElementById("products-list");
 
   if (clearBtn) {
@@ -143,6 +194,20 @@ document.addEventListener("DOMContentLoaded", () => {
           li.click();
         }
       });
+    };
+  }
+
+  if (issueBtn) {
+    issueBtn.onclick = async () => {
+      if (!list) return;
+      const checkedItems = list.querySelectorAll("li.product-item.checked");
+      const ids = Array.from(checkedItems).map(li => li.dataset.productId);
+      if (ids.length === 0) {
+        showPopupMessage("Нет выбранных товаров для выдачи", false);
+        return;
+      }
+      await setStatusIssuedForProducts(ids);
+      showPopupMessage("Статус 'Выдан' обновлён для выбранных товаров", true);
     };
   }
 });
