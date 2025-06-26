@@ -31,7 +31,7 @@ async function fetchPurchasesByUserId(userId) {
   });
   const data = await res.json();
   if (!data.records || data.records.length === 0) return [];
-  return data.records.map(r => r.fields["Товары"]);
+  return data.records.map(r => r.fields["ID товара"]);
 }
 
 function onScanSuccess(decodedText) {
@@ -55,9 +55,9 @@ async function processQr(qrLink) {
     // 3. Вывести товары
     const messageElem = document.getElementById("message");
     if (messageElem) {
-      messageElem.textContent = `Товары: ${purchases.join(", ")}`;
+      messageElem.textContent = `ID товара: ${purchases.join(", ")}`;
     }
-    showPopupMessage(`Товары: ${purchases.join(", ")}`, true);
+    showPopupMessage(`ID товара: ${purchases.join(", ")}`, true);
   } catch (err) {
     console.error(err);
     showPopupMessage("Ошибка соединения", false);
