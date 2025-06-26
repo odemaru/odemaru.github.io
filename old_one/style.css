@@ -1,0 +1,26 @@
+.popup-message {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 14px 20px;
+  border-radius: 8px;
+  font-size: 16px;
+  color: white;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  opacity: 1;
+  transition: opacity 0.5s ease-out;
+}
+
+.popup-message.success {
+  background-color: #4CAF50;
+}
+
+.popup-message.error {
+  background-color: #f44336;
+}
+
+.popup-message.hide {
+  opacity: 0;
+}
