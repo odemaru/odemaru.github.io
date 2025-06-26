@@ -95,6 +95,7 @@ function renderProducts(products) {
   products.forEach(name => {
     const li = document.createElement("li");
     li.textContent = name;
+    li.classList.add("product-item");
     list.appendChild(li);
   });
 }
@@ -105,3 +106,34 @@ qrScanner.start(
   { fps: 10, qrbox: 250 },
   onScanSuccess
 );
+
+// --- Кнопки управления списком ---
+document.addEventListener("DOMContentLoaded", () => {
+  const clearBtn = document.getElementById("clear-list-btn");
+  const checkAllBtn = document.getElementById("check-all-btn");
+  const list = document.getElementById("products-list");
+
+  if (clearBtn) {
+    clearBtn.onclick = () => {
+      if (list) list.innerHTML = "";
+    };
+  }
+
+  if (checkAllBtn) {
+    checkAllBtn.onclick = () => {
+      if (!list) return;
+      const items = list.querySelectorAll("li.product-item");
+      items.forEach(li => {
+        if (!li.classList.contains("checked")) {
+          li.classList.add("checked");
+          li.innerHTML = '✔️ ' + li.textContent;
+        }
+      });
+    };
+  }
+});
+
+// --- Стили для отмеченных товаров ---
+const style = document.createElement('style');
+style.innerHTML = `.product-item.checked { color: #4CAF50; font-weight: 500; }`;
+document.head.appendChild(style);
