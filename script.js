@@ -25,7 +25,7 @@ async function fetchUserIdByQrLink(qrLink) {
 
 async function fetchPurchasesByUserId(userId) {
   const tableName = "Покупки";
-  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?filterByFormula=${encodeURIComponent(`{ID покупателя} = "${userId}"`)}`;
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?filterByFormula=${encodeURIComponent(`AND({ID покупателя} = "${userId}", OR({Отсканирован QR} = '', {Отсканирован QR} = 0, NOT({Отсканирован QR})))`)}`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${airtableToken}` }
   });
