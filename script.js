@@ -31,26 +31,31 @@ async function fetchPurchasesByUserId(userId) {
   });
   const data = await res.json();
   if (!data.records || data.records.length === 0) return [];
-  return data.records.map(r => r.fields["ID товара"]);
+  // Возвращаем массив объектов: { id: ID товара, count: Количество }
+  return data.records.map(r => ({ id: r.fields["ID товара"], count: r.fields["Количество"] }));
 }
 
-async function fetchProductNamesByIds(productIds) {
-  if (!productIds.length) return [];
+async function fetchProductNamesByIds(productObjs) {
+  if (!productObjs.length) return [];
   const tableName = "Мерч";
-  // Формируем формулу поиска по нескольким ID
-  const orConditions = productIds.map(id => `({ID} = "${id}")`).join(",");
+  const ids = productObjs.map(obj => obj.id);
+  const orConditions = ids.map(id => `({ID} = "${id}")`).join(",");
   const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?filterByFormula=OR(${orConditions})`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${airtableToken}` }
   });
   const data = await res.json();
   if (!data.records || data.records.length === 0) return [];
-  // Возвращаем массив названий в том же порядке, что и productIds
   const idToName = {};
   data.records.forEach(r => {
     idToName[r.fields["ID"]] = r.fields["Название"] || r.fields["ID"];
   });
-  return productIds.map(id => idToName[id] || id);
+  // Возвращаем [{name, id, count} ...] в том же порядке, что и productObjs
+  return productObjs.map(obj => ({
+    name: idToName[obj.id] || obj.id,
+    id: obj.id,
+    count: obj.count || 1
+  }));
 }
 
 function onScanSuccess(decodedText) {
@@ -65,14 +70,14 @@ async function processQr(qrLink) {
       renderProducts([]);
       return;
     }
-    const productIds = await fetchPurchasesByUserId(userId);
-    if (productIds.length === 0) {
+    const productObjs = await fetchPurchasesByUserId(userId);
+    if (productObjs.length === 0) {
       showPopupMessage("не удалось отсканировать QR код", false);
       renderProducts([]);
       return;
     }
-    const productNames = await fetchProductNamesByIds(productIds);
-    renderProducts(productNames);
+    const products = await fetchProductNamesByIds(productObjs);
+    renderProducts(products);
     showPopupMessage("QR отсканировано", true);
   } catch (err) {
     console.error(err);
@@ -92,10 +97,20 @@ function renderProducts(products) {
     list.appendChild(li);
     return;
   }
-  products.forEach(name => {
+  products.forEach(product => {
     const li = document.createElement("li");
-    li.textContent = name;
+    li.textContent = `${product.name} (x${product.count})`;
     li.classList.add("product-item");
+    li.dataset.productId = product.id;
+    li.onclick = function() {
+      if (!li.classList.contains("checked")) {
+        li.classList.add("checked");
+        li.innerHTML = '✔️ ' + li.textContent;
+      } else {
+        li.classList.remove("checked");
+        li.innerHTML = li.textContent.replace(/^✔️ /, "");
+      }
+    };
     list.appendChild(li);
   });
 }
@@ -125,8 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const items = list.querySelectorAll("li.product-item");
       items.forEach(li => {
         if (!li.classList.contains("checked")) {
-          li.classList.add("checked");
-          li.innerHTML = '✔️ ' + li.textContent;
+          li.click();
         }
       });
     };
