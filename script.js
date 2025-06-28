@@ -25,7 +25,7 @@ async function fetchUserIdByQrLink(qrLink) {
 
 async function fetchPurchasesByUserId(userId) {
   const tableName = "Покупки";
-  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?filterByFormula=${encodeURIComponent(`AND({ID покупателя} = "${userId}", OR({Отсканирован QR} = '', {Отсканирован QR} = 0, NOT({Отсканирован QR})))`)}`;
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(tableName)}?filterByFormula=${encodeURIComponent(`AND({ID покупателя} = "${userId}", OR({Статус} = "Заказан"))`)}`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${airtableToken}` }
   });
@@ -65,22 +65,22 @@ async function processQr(qrLink) {
   try {
     const userId = await fetchUserIdByQrLink(qrLink);
     if (!userId) {
-      showPopupMessage("не удалось отсканировать QR код", false);
+      showPopupMessage("Не удалось отсканировать QR код", false);
       renderProducts([]);
       return;
     }
     const productObjs = await fetchPurchasesByUserId(userId);
     if (productObjs.length === 0) {
-      showPopupMessage("не удалось отсканировать QR код", false);
+      showPopupMessage("Не удалось отсканировать QR код", false);
       renderProducts([]);
       return;
     }
     const products = await fetchProductNamesByIds(productObjs);
     renderProducts(products);
-    showPopupMessage("QR отсканировано", true);
+    showPopupMessage("QR отсканирован", true);
   } catch (err) {
     console.error(err);
-    showPopupMessage("не удалось отсканировать QR код", false);
+    showPopupMessage("Не удалось отсканировать QR код", false);
     renderProducts([]);
   }
 }
